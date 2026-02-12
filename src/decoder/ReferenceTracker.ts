@@ -40,7 +40,12 @@ export class ReferenceTracker {
     // for decoding
     addRef(refId: number, ref: IRef, incrementCount: boolean = true) {
         this.refs.set(refId, ref);
-        ref[$refId] = refId;
+
+        Object.defineProperty(ref, $refId, {
+            value: refId,
+            enumerable: false,
+            writable: true
+        });
 
         if (incrementCount) {
             this.refCount[refId] = (this.refCount[refId] || 0) + 1;

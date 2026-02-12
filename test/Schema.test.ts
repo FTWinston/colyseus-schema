@@ -8,7 +8,7 @@
 
 import * as assert from "assert";
 import { State, Player, DeepState, DeepMap, DeepChild, Position, DeepEntity, assertDeepStrictEqualEncodeAll, createInstanceFromReflection, getEncoder } from "./Schema";
-import { Schema, ArraySchema, MapSchema, type, Metadata, $changes, Encoder, Decoder, SetSchema, schema, ToJSON } from "../src";
+import { Schema, ArraySchema, MapSchema, type, Metadata, $changes, Encoder, Decoder, SetSchema, schema, ToJSON, $refId } from "../src";
 import { getNormalizedType } from "../src/Metadata";
 
 describe("Type: Schema", () => {
@@ -649,6 +649,19 @@ describe("Type: Schema", () => {
     });
 
     describe("encoding/decoding", () => {
+        it(".assign() should not re-assign the $refId", () => {
+            const state = new State();
+            state.player = new Player();
+            state.mapOfPlayers = new MapSchema<Player>();
+
+            getEncoder(state);
+
+            const newPlayer = new Player().assign(state.player);
+            state.mapOfPlayers.set("one", newPlayer);
+
+            assert.ok(newPlayer[$refId] !== state.player[$refId]);
+        });
+
         it("should encode/decode STRING", () => {
             const state = new State();
             state.fieldString = "Hello world";

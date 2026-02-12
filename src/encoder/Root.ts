@@ -28,7 +28,11 @@ export class Root {
 
         // Assign unique `refId` to ref if it doesn't have one yet.
         if (ref[$refId] === undefined) {
-            ref[$refId] = this.getNextUniqueId();
+            Object.defineProperty(ref, $refId, {
+                value: this.getNextUniqueId(),
+                enumerable: false,
+                writable: true
+            });
         }
 
         const refId = ref[$refId];
