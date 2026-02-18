@@ -238,6 +238,62 @@ describe("Callbacks (new API)", () => {
             assert.deepStrictEqual(addedIndexes, [0, 1]);
             assert.deepStrictEqual(addedAmounts, [10, 20]);
         });
+
+        it("should not register onAdd callback twice when collection becomes available", () => {
+            class Player extends Schema {
+                @type("string") name: string;
+            }
+
+            class State extends Schema {
+                @type({ map: Player }) players: MapSchema<Player>;
+            }
+
+            const state = new State();
+            // Initially no players collection (undefined)
+
+            const decodedState = createInstanceFromReflection(state);
+            const decoder = getDecoder(decodedState);
+            const callbacks = Callbacks.get(decoder);
+
+            let addCount = 0;
+            const addedNames: string[] = [];
+
+            // Register onAdd while collection is NOT available
+            callbacks.onAdd(
+                "players",
+                (player, sessionId) => {
+                    addCount++;
+                    addedNames.push(player.name);
+                }
+            );
+
+            // First decode - no collection yet
+            decodedState.decode(state.encode());
+            assert.strictEqual(addCount, 0);
+
+            // Now set the collection with a player
+            state.players = new MapSchema<Player>();
+            state.players.set("one", new Player().assign({ name: "Alice" }));
+            decodedState.decode(state.encodeAll());
+            decodedState.decode(state.encode());
+
+            // Should be called exactly once for Alice
+            assert.strictEqual(addCount, 1, `Expected addCount to be 1, but was ${addCount}. Names: ${addedNames.join(", ")}`);
+
+            // Add another player to the same collection
+            state.players.set("two", new Player().assign({ name: "Bob" }));
+            decodedState.decode(state.encode());
+
+            // Should be called once for Bob (total 2)
+            assert.strictEqual(addCount, 2, `Expected addCount to be 2, but was ${addCount}. Names: ${addedNames.join(", ")}`);
+
+            // Add another player to the same collection
+            state.players.set("three", new Player().assign({ name: "Charlie" }));
+            decodedState.decode(state.encode());
+
+            // Should be called once for Charlie (total 3)
+            assert.strictEqual(addCount, 3, `Expected addCount to be 3, but was ${addCount}. Names: ${addedNames.join(", ")}`);
+        });
     });
 
     describe("onChange", () => {

@@ -86,15 +86,19 @@ export class StateCallbackStrategy<TState extends IRef> {
 
         // Collection not available yet. Listen for its availability before attaching the handler.
         if (!collection || collection[$refId] === undefined) {
-            removeHandler = this.addCallback(
+            let removePropertyCallback: () => void;
+            removePropertyCallback = this.addCallback(
                 instance[$refId],
                 propertyName,
                 (value: TReturn, _: TReturn) => {
                     if (value !== null && value !== undefined) {
+                        // Remove the property listener now that collection is available
+                        removePropertyCallback();
                         removeHandler = this.addCallback(value[$refId], operation, handler);
                     }
                 }
             );
+            removeHandler = removePropertyCallback;
             return removeOnAdd;
 
         } else {
