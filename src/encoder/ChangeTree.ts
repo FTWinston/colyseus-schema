@@ -1,6 +1,6 @@
 import { OPERATION } from "../encoding/spec.js";
 import { Schema } from "../Schema.js";
-import { $changes, $childType, $decoder, $onEncodeEnd, $encoder, $getByIndex, $refId, $refTypeFieldIndexes, $viewFieldIndexes, type $deleteByIndex } from "../types/symbols.js";
+import { $changes, $childType, $decoder, $onEncodeEnd, $encoder, $getByIndex, $refId, $refTypeFieldIndexes, $viewFieldIndexes, type $deleteByIndex, $inheritVisibility } from "../types/symbols.js";
 
 import type { MapSchema } from "../types/custom/MapSchema.js";
 import type { ArraySchema } from "../types/custom/ArraySchema.js";
@@ -568,7 +568,7 @@ export class ChangeTree<T extends Ref = any> {
             || fieldHasViewTag;
 
         //
-        // "isFiltered" may not be imedialely available during `change()` due to the instance not being attached to the root yet.
+        // "isFiltered" may not be immediately available during `change()` due to the instance not being attached to the root yet.
         // when it's available, we need to enqueue the "changes" changeset into the "filteredChanges" changeset.
         //
         if (this.isFiltered) {
@@ -577,7 +577,7 @@ export class ChangeTree<T extends Ref = any> {
                 parentChangeTree.isFiltered &&
                 typeof (refType) !== "string" &&
                 !fieldHasViewTag &&
-                parentIsCollection
+                (parentIsCollection || (refType as any)?.[$inheritVisibility] === true)
             );
 
             if (!this.filteredChanges) {

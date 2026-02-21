@@ -1,6 +1,6 @@
 import * as assert from "assert";
 
-import { Schema, type, ArraySchema, MapSchema, Reflection, Iterator, StateView } from "../src";
+import { Schema, type, ArraySchema, MapSchema, Reflection, Iterator, StateView, inheritVisibility } from "../src";
 import { Decoder } from "../src/decoder/Decoder";
 import { Encoder } from "../src/encoder/Encoder";
 import { CallbackProxy, getDecoderStateCallbacks, SchemaCallbackProxy } from "../src/decoder/strategy/getDecoderStateCallbacks";
@@ -249,10 +249,28 @@ export class Position extends Schema {
     }
 }
 
+@inheritVisibility
+export class InheritedPosition extends Schema {
+    @type("float32") x: number;
+    @type("float32") y: number;
+    @type("float32") z: number;
+
+    constructor(x: number, y: number, z: number) {
+        super();
+        this.x = x;
+        this.y = y;
+        this.z = z;
+    }
+}
+
+export class InheritanceParent extends Schema {
+    @type(Position) position: Position | undefined = undefined;
+    @type(InheritedPosition) inheritedPosition: InheritedPosition | undefined = undefined;
+}
+
 export class Another extends Schema {
     @type(Position) position: Position = new Position(0, 0, 0);
 }
-
 export class DeepEntity extends Schema {
     @type("string") name: string;
     @type(Another) another: Another = new Another();
