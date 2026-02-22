@@ -22,6 +22,6 @@ export function spliceOne(arr: any[], index: number): boolean {
  *  the same way that ArraySchema (etc) items do. */
 export function inheritVisibility<T extends new (...args: any[]) => Schema>(constructor: T): T {
     return class extends constructor {
-        inheritVisibility: true;
+        [$inheritVisibility]: true;
     };
 }
