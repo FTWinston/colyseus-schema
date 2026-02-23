@@ -7,8 +7,8 @@
 // import "core-js";
 
 import * as assert from "assert";
-import { State, Player, DeepState, DeepMap, DeepChild, Position, DeepEntity, assertDeepStrictEqualEncodeAll, createInstanceFromReflection, getEncoder, Another, InheritanceParent } from "./Schema";
-import { Schema, ArraySchema, MapSchema, type, Metadata, $changes, Encoder, Decoder, SetSchema, schema, ToJSON, $refId } from "../src";
+import { State, Player, DeepState, DeepMap, DeepChild, Position, DeepEntity, assertDeepStrictEqualEncodeAll, createInstanceFromReflection, getEncoder, Another, InheritanceParent, InheritedPosition, InheritanceRoot } from "./Schema";
+import { Schema, ArraySchema, MapSchema, type, Metadata, $changes, Encoder, Decoder, SetSchema, schema, ToJSON, $refId, StateView } from "../src";
 import { getNormalizedType } from "../src/Metadata";
 
 describe("Type: Schema", () => {
@@ -1018,51 +1018,68 @@ describe("Type: Schema", () => {
         });
 
         it("should not encode nested Schema that wasn't initially assigned", () => {
-            const state = new InheritanceParent();
+            const state = new InheritanceRoot();
+            const view = new StateView();
+            view.add(state.array);
+
             const encoded = state.encode();
             
-            const decodedState = new InheritanceParent();
+            const decodedState = new InheritanceRoot();
             decodedState.decode(encoded);
 
-            assert.strictEqual(decodedState.position, undefined);
+            assert.strictEqual(decodedState.array.length, 0);
+
+            const arrayItem = new InheritanceParent();
+
+            state.array.push(arrayItem);
+
+            arrayItem.standardPosition = new Position(1, 2, 3);
 
             /**
-             * Lets encode an assignment now: existing behaviour will encode the position, but since it wasn't assigned when we first decoded, changes will be ignored.
+             * Encode an assignment of an InheritanceParent into the array: since no array item was assigned when we first decoded, fields on the array item's "standard" child will be ignored.
              */
-
-            state.position = new Position(1, 2, 3);
-
             const serializedChanges = state.encode();
 
             decodedState.decode(serializedChanges);
-            assert.notStrictEqual(decodedState.position, undefined);
-            assert.strictEqual(decodedState.position.x, undefined);
-            assert.strictEqual(decodedState.position.y, undefined);
-            assert.strictEqual(decodedState.position.z, undefined);
+            assert.strictEqual(decodedState.array.length, 1);
+            assert.notStrictEqual(decodedState.array[0], undefined);
+            assert.notStrictEqual(decodedState.array[0].standardPosition, undefined);
+            assert.strictEqual(decodedState.array[0].standardPosition.x, undefined);
+            assert.strictEqual(decodedState.array[0].standardPosition.y, undefined);
+            assert.strictEqual(decodedState.array[0].standardPosition.z, undefined);
         });
 
         it("should encode nested Schema with @inheritVisibility that wasn't initially assigned", () => {
-            const state = new InheritanceParent();
+            const state = new InheritanceRoot();
+            const view = new StateView();
+            view.add(state.array);
+            
             const encoded = state.encode();
             
-            const decodedState = new InheritanceParent();
+            const decodedState = new InheritanceRoot();
             decodedState.decode(encoded);
 
-            assert.strictEqual(decodedState.inheritedPosition, undefined);
+            assert.strictEqual(decodedState.array.length, 0);
+
+            const arrayItem = new InheritanceParent();
+
+            state.array.push(arrayItem);
+
+            arrayItem.inheritingPosition = new InheritedPosition(1, 2, 3);
 
             /**
-             * Lets encode an assignment now: since it's marked with @inheritVisibility, it should be encoded and decoded even if it wasn't assigned when we first decoded the state.
+             * Encode an assignment of an InheritanceParent into the array: even though no array item was assigned when we first decoded, fields on the array item's "inheriting" child will be encoded and decoded,
+             * as that child is marked with @inheritVisibility.
              */
-
-            state.inheritedPosition = new Position(1, 2, 3);
-
             const serializedChanges = state.encode();
 
             decodedState.decode(serializedChanges);
-            assert.notStrictEqual(decodedState.inheritedPosition, undefined);
-            assert.strictEqual(decodedState.inheritedPosition.x, 1);
-            assert.strictEqual(decodedState.inheritedPosition.y, 2);
-            assert.strictEqual(decodedState.inheritedPosition.z, 3);
+            assert.strictEqual(decodedState.array.length, 1);
+            assert.notStrictEqual(decodedState.array[0], undefined);
+            assert.notStrictEqual(decodedState.array[0].inheritingPosition, undefined);
+            assert.strictEqual(decodedState.array[0].inheritingPosition.x, 1);
+            assert.strictEqual(decodedState.array[0].inheritingPosition.y, 2);
+            assert.strictEqual(decodedState.array[0].inheritingPosition.z, 3);
         });
 
         describe("no changes", () => {

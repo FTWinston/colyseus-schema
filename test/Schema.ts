@@ -264,8 +264,12 @@ export class InheritedPosition extends Schema {
 }
 
 export class InheritanceParent extends Schema {
-    @type(Position) position: Position | undefined = undefined;
-    @type(InheritedPosition) inheritedPosition: InheritedPosition | undefined = undefined;
+    @type(Position) standardPosition: Position | undefined = undefined;
+    @type(InheritedPosition) inheritingPosition: InheritedPosition | undefined = undefined;
+}
+
+export class InheritanceRoot extends Schema {
+    @type([InheritanceParent]) array = new ArraySchema<InheritanceParent>();
 }
 
 export class Another extends Schema {
