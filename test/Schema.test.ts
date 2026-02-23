@@ -1073,6 +1073,33 @@ describe("Type: Schema", () => {
             assert.strictEqual(client.state.parent.viewChild.z, undefined);
         });
 
+        it("should encode nested Schema wrapped in ArraySchema that wasn't initially assigned", () => {
+            const state = new InheritanceRoot();
+            const encoder = getEncoder(state);
+
+            const client = createClientWithView(state);
+            client.view.add(state.parent);
+
+            // Initial encode: child property is undefined
+            encodeMultiple(encoder, state, [client]);
+
+            // Assign a child Schema wrapped in an ArraySchema, to demonstrate this workaround.
+            state.parent.arrayChild.push(new Position(1, 2, 3));
+
+            /**
+             * Encode an assignment of a child field wrapped in an ArraySchema
+             * the child "arrayChild" field (Position), being in an ArraySchema,
+             * shares visibility with its parent and its fields are encoded for the client.
+             */
+            encodeMultiple(encoder, state, [client]);
+
+            assert.notStrictEqual(client.state.parent, undefined);
+            assert.strictEqual(client.state.parent.arrayChild.length, 1);
+            assert.strictEqual(client.state.parent.arrayChild[0].x, 1);
+            assert.strictEqual(client.state.parent.arrayChild[0].y, 2);
+            assert.strictEqual(client.state.parent.arrayChild[0].z, 3);
+        });
+
         it("should encode nested Schema with @inheritVisibility that wasn't initially assigned", () => {
             const state = new InheritanceRoot();
             const encoder = getEncoder(state);
