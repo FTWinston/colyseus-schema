@@ -1045,6 +1045,34 @@ describe("Type: Schema", () => {
             assert.strictEqual(client.state.parent.standardChild.z, undefined);
         });
 
+        it("should not encode nested Schema with @view that wasn't initially assigned", () => {
+            const state = new InheritanceRoot();
+            const encoder = getEncoder(state);
+
+            const client = createClientWithView(state);
+            client.view.add(state.parent);
+
+            // Initial encode: child property is undefined
+            encodeMultiple(encoder, state, [client]);
+
+            // Assign a child Schema that uses @view
+            state.parent.viewChild = new Position(1, 2, 3);
+
+            /**
+             * Encode an assignment of a child field:
+             * the child "viewChild" field (Position) is marked with @view,
+             * so it shares visibility with its parent and
+             * its fields are encoded for the client.
+             */
+            encodeMultiple(encoder, state, [client]);
+
+            assert.notStrictEqual(client.state.parent, undefined);
+            assert.notStrictEqual(client.state.parent.viewChild, undefined);
+            assert.strictEqual(client.state.parent.viewChild.x, undefined);
+            assert.strictEqual(client.state.parent.viewChild.y, undefined);
+            assert.strictEqual(client.state.parent.viewChild.z, undefined);
+        });
+
         it("should encode nested Schema with @inheritVisibility that wasn't initially assigned", () => {
             const state = new InheritanceRoot();
             const encoder = getEncoder(state);
