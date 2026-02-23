@@ -61,7 +61,7 @@ describe("StateView", () => {
         // assertEncodeAllMultiple(encoder, state, [client1])
     });
 
-    xit("should allow adding detached instances to the view (not immediately attached)", () => {
+    it.skip("should allow adding detached instances to the view (not immediately attached)", () => {
         class Item extends Schema {
             @type("number") amount: number;
         }
@@ -91,7 +91,7 @@ describe("StateView", () => {
         assertEncodeAllMultiple(encoder, state, [client1])
     });
 
-    xit("shouldn't allow to add detached instance to view", () => {
+    it.skip("shouldn't allow to add detached instance to view", () => {
         class Entity extends Schema {
             @type("string") id: string = nanoid(9);
         }

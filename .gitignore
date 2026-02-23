@@ -19,3 +19,4 @@ decoders/cpp/usage*
 decoders/csharp/Colyseus.Schema/bin/
 decoders/csharp/Colyseus.Schema/obj/
 decoders/csharp/Colyseus.Schema/.vs/
+/build/
