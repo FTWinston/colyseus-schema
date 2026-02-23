@@ -7,8 +7,8 @@
 // import "core-js";
 
 import * as assert from "assert";
-import { State, Player, DeepState, DeepMap, DeepChild, Position, DeepEntity, assertDeepStrictEqualEncodeAll, createInstanceFromReflection, getEncoder, Another, InheritanceParent, InheritedPosition, InheritanceRoot } from "./Schema";
-import { Schema, ArraySchema, MapSchema, type, Metadata, $changes, Encoder, Decoder, SetSchema, schema, ToJSON, $refId, StateView } from "../src";
+import { State, Player, DeepState, DeepMap, DeepChild, Position, assertDeepStrictEqualEncodeAll, createInstanceFromReflection, getEncoder, InheritedPosition, InheritanceRoot, createClientWithView, encodeMultiple } from "./Schema";
+import { Schema, ArraySchema, MapSchema, type, Metadata, $changes, Encoder, Decoder, SetSchema, schema, ToJSON, $refId } from "../src";
 import { getNormalizedType } from "../src/Metadata";
 
 describe("Type: Schema", () => {
@@ -1019,67 +1019,58 @@ describe("Type: Schema", () => {
 
         it("should not encode nested Schema that wasn't initially assigned", () => {
             const state = new InheritanceRoot();
-            const view = new StateView();
-            view.add(state.array);
+            const encoder = getEncoder(state);
 
-            const encoded = state.encode();
-            
-            const decodedState = new InheritanceRoot();
-            decodedState.decode(encoded);
+            const client = createClientWithView(state);
+            client.view.add(state.parent);
 
-            assert.strictEqual(decodedState.array.length, 0);
+            // Initial encode: child property is undefined
+            encodeMultiple(encoder, state, [client]);
 
-            const arrayItem = new InheritanceParent();
-
-            state.array.push(arrayItem);
-
-            arrayItem.standardPosition = new Position(1, 2, 3);
+            // Assign a child Schema that does NOT use @inheritVisibility
+            state.parent.standardChild = new Position(1, 2, 3);
 
             /**
-             * Encode an assignment of an InheritanceParent into the array: since no array item was assigned when we first decoded, fields on the array item's "standard" child will be ignored.
+             * Encode an assignment of a child field:
+             * since the "standardChild" field (Position) does not use
+             * @inheritVisibility, its fields are not visible to the client
+             * even though the parent InheritanceParent is visible.
              */
-            const serializedChanges = state.encode();
+            encodeMultiple(encoder, state, [client]);
 
-            decodedState.decode(serializedChanges);
-            assert.strictEqual(decodedState.array.length, 1);
-            assert.notStrictEqual(decodedState.array[0], undefined);
-            assert.notStrictEqual(decodedState.array[0].standardPosition, undefined);
-            assert.strictEqual(decodedState.array[0].standardPosition.x, undefined);
-            assert.strictEqual(decodedState.array[0].standardPosition.y, undefined);
-            assert.strictEqual(decodedState.array[0].standardPosition.z, undefined);
+            assert.notStrictEqual(client.state.parent, undefined);
+            assert.notStrictEqual(client.state.parent.standardChild, undefined);
+            assert.strictEqual(client.state.parent.standardChild.x, undefined);
+            assert.strictEqual(client.state.parent.standardChild.y, undefined);
+            assert.strictEqual(client.state.parent.standardChild.z, undefined);
         });
 
         it("should encode nested Schema with @inheritVisibility that wasn't initially assigned", () => {
             const state = new InheritanceRoot();
-            const view = new StateView();
-            view.add(state.array);
-            
-            const encoded = state.encode();
-            
-            const decodedState = new InheritanceRoot();
-            decodedState.decode(encoded);
+            const encoder = getEncoder(state);
 
-            assert.strictEqual(decodedState.array.length, 0);
+            const client = createClientWithView(state);
+            client.view.add(state.parent);
 
-            const arrayItem = new InheritanceParent();
+            // Initial encode: child property is undefined
+            encodeMultiple(encoder, state, [client]);
 
-            state.array.push(arrayItem);
-
-            arrayItem.inheritingPosition = new InheritedPosition(1, 2, 3);
+            // Assign a child Schema that uses @inheritVisibility
+            state.parent.inheritingChild = new InheritedPosition(1, 2, 3);
 
             /**
-             * Encode an assignment of an InheritanceParent into the array: even though no array item was assigned when we first decoded, fields on the array item's "inheriting" child will be encoded and decoded,
-             * as that child is marked with @inheritVisibility.
+             * Encode an assignment of a child field:
+             * the child "inheritingChild" field (InheritedPosition) is marked with
+             * @inheritVisibility, so it shares visibility with its parent and
+             * its fields are encoded for the client.
              */
-            const serializedChanges = state.encode();
+            encodeMultiple(encoder, state, [client]);
 
-            decodedState.decode(serializedChanges);
-            assert.strictEqual(decodedState.array.length, 1);
-            assert.notStrictEqual(decodedState.array[0], undefined);
-            assert.notStrictEqual(decodedState.array[0].inheritingPosition, undefined);
-            assert.strictEqual(decodedState.array[0].inheritingPosition.x, 1);
-            assert.strictEqual(decodedState.array[0].inheritingPosition.y, 2);
-            assert.strictEqual(decodedState.array[0].inheritingPosition.z, 3);
+            assert.notStrictEqual(client.state.parent, undefined);
+            assert.notStrictEqual(client.state.parent.inheritingChild, undefined);
+            assert.strictEqual(client.state.parent.inheritingChild.x, 1);
+            assert.strictEqual(client.state.parent.inheritingChild.y, 2);
+            assert.strictEqual(client.state.parent.inheritingChild.z, 3);
         });
 
         describe("no changes", () => {

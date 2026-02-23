@@ -1,6 +1,6 @@
 import * as assert from "assert";
 
-import { Schema, type, ArraySchema, MapSchema, Reflection, Iterator, StateView, inheritVisibility } from "../src";
+import { Schema, type, ArraySchema, MapSchema, Reflection, Iterator, StateView, inheritVisibility, view } from "../src";
 import { Decoder } from "../src/decoder/Decoder";
 import { Encoder } from "../src/encoder/Encoder";
 import { CallbackProxy, getDecoderStateCallbacks, SchemaCallbackProxy } from "../src/decoder/strategy/getDecoderStateCallbacks";
@@ -264,12 +264,12 @@ export class InheritedPosition extends Schema {
 }
 
 export class InheritanceParent extends Schema {
-    @type(Position) standardPosition: Position | undefined = undefined;
-    @type(InheritedPosition) inheritingPosition: InheritedPosition | undefined = undefined;
+    @type(Position) standardChild: Position | undefined = undefined;
+    @type(InheritedPosition) inheritingChild: InheritedPosition | undefined = undefined;
 }
 
 export class InheritanceRoot extends Schema {
-    @type([InheritanceParent]) array = new ArraySchema<InheritanceParent>();
+    @view() @type(InheritanceParent) parent = new InheritanceParent();
 }
 
 export class Another extends Schema {
