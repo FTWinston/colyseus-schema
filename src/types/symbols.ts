@@ -31,12 +31,6 @@ export const $onEncodeEnd = '~onEncodeEnd';
 export const $onDecodeEnd = "~onDecodeEnd";
 
 /**
- * Used to mark that a Schema class should be visible whenever it's parent is visible, even if it doesn't have any view tags itself.
- * This is used for "nested" Schema classes that are only used as fields of other Schema classes.
- */
-export const $inheritVisibility = '~inheritVisibility';
-
-/**
  * Metadata
  */
 export const $descriptors = "~descriptors";

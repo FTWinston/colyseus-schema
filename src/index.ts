@@ -24,7 +24,6 @@ registerType("collection", { constructor: CollectionSchema, });
 
 // Utils
 export { dumpChanges } from "./utils.js";
-export { inheritVisibility } from "./types/utils.js";
 
 // Encoder / Decoder
 export { $track, $encoder, $decoder, $filter, $getByIndex, $deleteByIndex, $changes, $childType, $refId } from "./types/symbols.js";

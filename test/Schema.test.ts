@@ -7,7 +7,7 @@
 // import "core-js";
 
 import * as assert from "assert";
-import { State, Player, DeepState, DeepMap, DeepChild, Position, assertDeepStrictEqualEncodeAll, createInstanceFromReflection, getEncoder, InheritedPosition, InheritanceRoot, createClientWithView, encodeMultiple } from "./Schema";
+import { State, Player, DeepState, DeepMap, DeepChild, Position, assertDeepStrictEqualEncodeAll, createInstanceFromReflection, getEncoder, InheritanceRoot, createClientWithView, encodeMultiple } from "./Schema";
 import { Schema, ArraySchema, MapSchema, type, Metadata, $changes, Encoder, Decoder, SetSchema, schema, ToJSON, $refId } from "../src";
 import { getNormalizedType } from "../src/Metadata";
 
@@ -1017,7 +1017,7 @@ describe("Type: Schema", () => {
             assert.deepStrictEqual(decodedState.mapOfNumbers.toJSON(), { 'zero': 0, 'one': 1, 'two': 2, 'three': 3 });
         });
 
-        it("should not encode nested Schema that wasn't initially assigned", () => {
+        it("should encode nested Schema", () => {
             const state = new InheritanceRoot();
             const encoder = getEncoder(state);
 
@@ -1027,25 +1027,23 @@ describe("Type: Schema", () => {
             // Initial encode: child property is undefined
             encodeMultiple(encoder, state, [client]);
 
-            // Assign a child Schema that does NOT use @inheritVisibility
+            // Assign a child Schema instance.
             state.parent.standardChild = new Position(1, 2, 3);
 
             /**
              * Encode an assignment of a child field:
-             * since the "standardChild" field (Position) does not use
-             * @inheritVisibility, its fields are not visible to the client
-             * even though the parent InheritanceParent is visible.
+             * Its fields should be visible to the client, because it inherits visibility from its parent.
              */
             encodeMultiple(encoder, state, [client]);
 
             assert.notStrictEqual(client.state.parent, undefined);
             assert.notStrictEqual(client.state.parent.standardChild, undefined);
-            assert.strictEqual(client.state.parent.standardChild.x, undefined);
-            assert.strictEqual(client.state.parent.standardChild.y, undefined);
-            assert.strictEqual(client.state.parent.standardChild.z, undefined);
+            assert.strictEqual(client.state.parent.standardChild.x, 1);
+            assert.strictEqual(client.state.parent.standardChild.y, 2);
+            assert.strictEqual(client.state.parent.standardChild.z, 3);
         });
 
-        it("should not encode nested Schema with @view that wasn't initially assigned", () => {
+        it("should not encode nested Schema with @view", () => {
             const state = new InheritanceRoot();
             const encoder = getEncoder(state);
 
@@ -1061,8 +1059,8 @@ describe("Type: Schema", () => {
             /**
              * Encode an assignment of a child field:
              * the child "viewChild" field (Position) is marked with @view,
-             * so it shares visibility with its parent and
-             * its fields are encoded for the client.
+             * so it does not share visibility with its parent, and
+             * its fields are not encoded for the client.
              */
             encodeMultiple(encoder, state, [client]);
 
@@ -1073,7 +1071,7 @@ describe("Type: Schema", () => {
             assert.strictEqual(client.state.parent.viewChild.z, undefined);
         });
 
-        it("should encode nested Schema wrapped in ArraySchema that wasn't initially assigned", () => {
+        it("should encode nested Schema wrapped in ArraySchema", () => {
             const state = new InheritanceRoot();
             const encoder = getEncoder(state);
 
@@ -1088,8 +1086,8 @@ describe("Type: Schema", () => {
 
             /**
              * Encode an assignment of a child field wrapped in an ArraySchema
-             * the child "arrayChild" field (Position), being in an ArraySchema,
-             * shares visibility with its parent and its fields are encoded for the client.
+             * the child "arrayChild" field (Position) shares visibility with its parent,
+             * and its fields are encoded for the client.
              */
             encodeMultiple(encoder, state, [client]);
 
@@ -1098,34 +1096,6 @@ describe("Type: Schema", () => {
             assert.strictEqual(client.state.parent.arrayChild[0].x, 1);
             assert.strictEqual(client.state.parent.arrayChild[0].y, 2);
             assert.strictEqual(client.state.parent.arrayChild[0].z, 3);
-        });
-
-        it("should encode nested Schema with @inheritVisibility that wasn't initially assigned", () => {
-            const state = new InheritanceRoot();
-            const encoder = getEncoder(state);
-
-            const client = createClientWithView(state);
-            client.view.add(state.parent);
-
-            // Initial encode: child property is undefined
-            encodeMultiple(encoder, state, [client]);
-
-            // Assign a child Schema that uses @inheritVisibility
-            state.parent.inheritingChild = new InheritedPosition(1, 2, 3);
-
-            /**
-             * Encode an assignment of a child field:
-             * the child "inheritingChild" field (InheritedPosition) is marked with
-             * @inheritVisibility, so it shares visibility with its parent and
-             * its fields are encoded for the client.
-             */
-            encodeMultiple(encoder, state, [client]);
-
-            assert.notStrictEqual(client.state.parent, undefined);
-            assert.notStrictEqual(client.state.parent.inheritingChild, undefined);
-            assert.strictEqual(client.state.parent.inheritingChild.x, 1);
-            assert.strictEqual(client.state.parent.inheritingChild.y, 2);
-            assert.strictEqual(client.state.parent.inheritingChild.z, 3);
         });
 
         describe("no changes", () => {

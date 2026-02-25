@@ -1,6 +1,6 @@
 import { OPERATION } from "../encoding/spec.js";
 import { Schema } from "../Schema.js";
-import { $changes, $childType, $decoder, $onEncodeEnd, $encoder, $getByIndex, $refId, $refTypeFieldIndexes, $viewFieldIndexes, type $deleteByIndex, $inheritVisibility } from "../types/symbols.js";
+import { $changes, $childType, $decoder, $onEncodeEnd, $encoder, $getByIndex, $refId, $refTypeFieldIndexes, $viewFieldIndexes, type $deleteByIndex } from "../types/symbols.js";
 
 import type { MapSchema } from "../types/custom/MapSchema.js";
 import type { ArraySchema } from "../types/custom/ArraySchema.js";
@@ -576,8 +576,7 @@ export class ChangeTree<T extends Ref = any> {
             this.isVisibilitySharedWithParent = (
                 parentChangeTree.isFiltered &&
                 typeof (refType) !== "string" &&
-                !fieldHasViewTag &&
-                (parentIsCollection || (refType as any)?.[$inheritVisibility] === true)
+                !fieldHasViewTag
             );
 
             if (!this.filteredChanges) {
