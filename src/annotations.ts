@@ -33,11 +33,11 @@ export type PrimitiveType = RawPrimitiveType | typeof Schema | object;
 // TODO: infer "default" value type correctly.
 export type DefinitionType<T extends PrimitiveType = PrimitiveType> = T
     | T[]
-    | { type: T, default?: InferValueType<T>, view?: boolean | number, sync?: boolean }
-    | { array: T, default?: ArraySchema<InferValueType<T>>, view?: boolean | number, sync?: boolean }
-    | { map: T, default?: MapSchema<InferValueType<T>>, view?: boolean | number, sync?: boolean }
-    | { collection: T, default?: CollectionSchema<InferValueType<T>>, view?: boolean | number, sync?: boolean }
-    | { set: T, default?: SetSchema<InferValueType<T>>, view?: boolean | number, sync?: boolean };
+    | { type: T, default?: InferValueType<T>, view?: boolean | number | number[], sync?: boolean }
+    | { array: T, default?: ArraySchema<InferValueType<T>>, view?: boolean | number | number[], sync?: boolean }
+    | { map: T, default?: MapSchema<InferValueType<T>>, view?: boolean | number | number[], sync?: boolean }
+    | { collection: T, default?: CollectionSchema<InferValueType<T>>, view?: boolean | number | number[], sync?: boolean }
+    | { set: T, default?: SetSchema<InferValueType<T>>, view?: boolean | number | number[], sync?: boolean };
 
 export type Definition = { [field: string]: DefinitionType };
 
@@ -218,7 +218,7 @@ export function entity(constructor: any): any {
 //     }
 // }
 
-export function view<T> (tag: number = DEFAULT_VIEW_TAG) {
+export function view<T> (...tags: number[]) {
     return function(target: T, fieldName: string) {
         const constructor = target.constructor as typeof Schema;
 
@@ -241,7 +241,7 @@ export function view<T> (tag: number = DEFAULT_VIEW_TAG) {
         //     }
         // }
 
-        Metadata.setTag(metadata, fieldName, tag);
+        Metadata.setTag(metadata, fieldName, tags.length === 0 ? [DEFAULT_VIEW_TAG] : tags);
     }
 }
 
@@ -569,9 +569,10 @@ export function schema<
         const value: any = fieldsAndMethods[fieldName] as DefinitionType;
         if (typeof (value) === "object") {
             if (value['view'] !== undefined) {
-                viewTagFields[fieldName] = (typeof (value['view']) === "boolean")
-                    ? DEFAULT_VIEW_TAG
-                    : value['view'];
+                const rawView = value['view'];
+                viewTagFields[fieldName] = (typeof rawView === "boolean")
+                    ? []
+                    : Array.isArray(rawView) ? rawView : [rawView];
             }
 
             // allow to define a field as not synced
@@ -686,7 +687,7 @@ export function schema<
     Object.assign(klass.prototype, methods);
 
     for (let fieldName in viewTagFields) {
-        view(viewTagFields[fieldName])(klass.prototype, fieldName);
+        view(...viewTagFields[fieldName])(klass.prototype, fieldName);
     }
 
     if (name) {

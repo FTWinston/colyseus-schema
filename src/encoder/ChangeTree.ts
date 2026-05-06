@@ -573,8 +573,8 @@ export class ChangeTree<T extends Ref = any> {
         // when it's available, we need to enqueue the "changes" changeset into the "filteredChanges" changeset.
         //
         if (this.isFiltered) {
-            const fieldViewTag: number | undefined = parentConstructor?.[Symbol.metadata]?.[parentIndex]?.tag;
-            const fieldHasNonDefaultViewTag = fieldViewTag !== DEFAULT_VIEW_TAG;
+            const fieldViewTags: number[] | undefined = parentConstructor?.[Symbol.metadata]?.[parentIndex]?.tag;
+            const fieldHasNonDefaultViewTag = fieldViewTags !== undefined && fieldViewTags.some(t => t !== DEFAULT_VIEW_TAG);
 
             this.isVisibilitySharedWithParent = (
                 parentChangeTree.isFiltered &&

@@ -8,7 +8,7 @@ export type MetadataField = {
     type: DefinitionType,
     name: string,
     index: number,
-    tag?: number,
+    tag?: number[],
     unreliable?: boolean,
     deprecated?: boolean,
 };
@@ -136,12 +136,12 @@ export const Metadata = {
         }
     },
 
-    setTag(metadata: Metadata, fieldName: string, tag: number) {
+    setTag(metadata: Metadata, fieldName: string, tags: number[]) {
         const index = metadata[fieldName];
         const field = metadata[index];
 
-        // add 'tag' to the field
-        field.tag = tag;
+        // add 'tags' to the field
+        field.tag = tags;
 
         if (!metadata[$viewFieldIndexes]) {
             // -2: all field indexes with "view" tag
@@ -161,11 +161,12 @@ export const Metadata = {
 
         metadata[$viewFieldIndexes].push(index);
 
-        if (!metadata[$fieldIndexesByViewTag][tag]) {
-            metadata[$fieldIndexesByViewTag][tag] = [];
+        for (const tag of tags) {
+            if (!metadata[$fieldIndexesByViewTag][tag]) {
+                metadata[$fieldIndexesByViewTag][tag] = [];
+            }
+            metadata[$fieldIndexesByViewTag][tag].push(index);
         }
-
-        metadata[$fieldIndexesByViewTag][tag].push(index);
     },
 
     setFields<T extends { new (...args: any[]): InstanceType<T> } = any>(target: T, fields: { [field in keyof InstanceType<T>]?: DefinitionType }) {

@@ -80,14 +80,14 @@ export class Schema<C = any> implements IRef {
             // view pass: no tag
             return true;
 
-        } else if (tag === DEFAULT_VIEW_TAG) {
+        } else if (tag.includes(DEFAULT_VIEW_TAG)) {
             // view pass: default tag
             return view.isChangeTreeVisible(ref[$changes]);
 
         } else {
             // view pass: custom tag
-            const tags = view.tags?.get(ref[$changes]);
-            return tags && tags.has(tag);
+            const viewTags = view.tags?.get(ref[$changes]);
+            return viewTags != null && tag.some(t => viewTags.has(t));
         }
     }
 

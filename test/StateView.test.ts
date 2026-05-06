@@ -196,6 +196,79 @@ describe("StateView", () => {
             assertEncodeAllMultiple(encoder, state, [client1, client2])
         });
 
+        it("@view() with multiple tags: field visible to any of the listed tags", () => {
+            enum Tag { ONE = 1, TWO = 2, THREE = 3 };
+
+            class Player extends Schema {
+                @view() @type("number") tag_default: number;
+
+                // visible to both Tag.ONE and Tag.TWO callers
+                @view(Tag.ONE, Tag.TWO) @type("number") shared: number;
+
+                @view(Tag.ONE) @type("number") only_one: number;
+                @view(Tag.TWO) @type("number") only_two: number;
+            }
+
+            class State extends Schema {
+                @type({ map: Player }) players = new MapSchema<Player>();
+            }
+
+            const state = new State();
+            const player = new Player().assign({
+                tag_default: 1,
+                shared: 2,
+                only_one: 3,
+                only_two: 4,
+            });
+            state.players.set("p", player);
+
+            const encoder = getEncoder(state);
+
+            // client1: added with Tag.ONE — should see shared + only_one
+            const client1 = createClientWithView(state);
+            client1.view.add(player, Tag.ONE);
+
+            // client2: added with Tag.TWO — should see shared + only_two
+            const client2 = createClientWithView(state);
+            client2.view.add(player, Tag.TWO);
+
+            // client3: added with Tag.THREE — should NOT see shared, only_one, or only_two
+            const client3 = createClientWithView(state);
+            client3.view.add(player, Tag.THREE);
+
+            // client4: added with default tag — should see tag_default only
+            const client4 = createClientWithView(state);
+            client4.view.add(player);
+
+            encodeMultiple(encoder, state, [client1, client2, client3, client4]);
+
+            // client1 sees tag_default (via DEFAULT_VIEW_TAG), shared and only_one
+            assert.strictEqual(client1.state.players.get("p").tag_default, 1);
+            assert.strictEqual(client1.state.players.get("p").shared, 2);
+            assert.strictEqual(client1.state.players.get("p").only_one, 3);
+            assert.strictEqual(client1.state.players.get("p").only_two, undefined);
+
+            // client2 sees tag_default, shared and only_two
+            assert.strictEqual(client2.state.players.get("p").tag_default, 1);
+            assert.strictEqual(client2.state.players.get("p").shared, 2);
+            assert.strictEqual(client2.state.players.get("p").only_one, undefined);
+            assert.strictEqual(client2.state.players.get("p").only_two, 4);
+
+            // client3 sees tag_default only (Tag.THREE not in any @view tag list)
+            assert.strictEqual(client3.state.players.get("p").tag_default, 1);
+            assert.strictEqual(client3.state.players.get("p").shared, undefined);
+            assert.strictEqual(client3.state.players.get("p").only_one, undefined);
+            assert.strictEqual(client3.state.players.get("p").only_two, undefined);
+
+            // client4 sees tag_default only
+            assert.strictEqual(client4.state.players.get("p").tag_default, 1);
+            assert.strictEqual(client4.state.players.get("p").shared, undefined);
+            assert.strictEqual(client4.state.players.get("p").only_one, undefined);
+            assert.strictEqual(client4.state.players.get("p").only_two, undefined);
+
+            assertEncodeAllMultiple(encoder, state, [client1, client2, client3, client4])
+        });
+
         it("view.remove() change should assign property to undefined", () => {
             class Item extends Schema {
                 @view() @type("number") amount: number;

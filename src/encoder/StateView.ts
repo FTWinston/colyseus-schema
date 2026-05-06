@@ -131,7 +131,7 @@ export class StateView {
             if (
                 metadata &&
                 metadata[index].tag !== undefined &&
-                metadata[index].tag !== tag
+                !metadata[index].tag.includes(tag)
             ) {
                 return;
             }
@@ -181,7 +181,7 @@ export class StateView {
                     (
                         isInvisible || // if "invisible", include all
                         tagAtIndex === undefined || // "all change" with no tag
-                        tagAtIndex === tag // tagged property
+                        tagAtIndex.includes(tag) // tagged property
                     )
                 ) {
                     changes[index] = op;
